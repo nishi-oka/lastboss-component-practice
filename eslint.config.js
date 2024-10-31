@@ -1,4 +1,5 @@
-module.exports = {
+/** @type {import('eslint').Linter.Config} */
+const config = {
   env: {
     browser: true,
     es2021: true,
@@ -8,7 +9,7 @@ module.exports = {
     "eslint:recommended",
     "plugin:react/recommended",
     "plugin:@typescript-eslint/recommended",
-    'plugin:prettier/recommended',
+    "plugin:prettier/recommended",
     "next/core-web-vitals",
   ],
   parser: "@typescript-eslint/parser",
@@ -22,3 +23,5 @@ module.exports = {
   plugins: ["react", "@typescript-eslint"],
   rules: {},
 };
+
+module.exports = config;
