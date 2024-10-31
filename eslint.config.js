@@ -1,27 +1,35 @@
-/** @type {import('eslint').Linter.Config} */
-const config = {
-  env: {
-    browser: true,
-    es2021: true,
-    node: true,
-  },
-  extends: [
-    "eslint:recommended",
-    "plugin:react/recommended",
-    "plugin:@typescript-eslint/recommended",
-    "plugin:prettier/recommended",
-    "next/core-web-vitals",
-  ],
-  parser: "@typescript-eslint/parser",
-  parserOptions: {
-    ecmaFeatures: {
-      jsx: true,
+/** @type {import('eslint').Linter.FlatConfig} */
+const config = [
+  {
+    languageOptions: {
+      globals: {
+        browser: true,
+        node: true,
+      },
+      parser: require('@typescript-eslint/parser'), // パーサーを直接インポートします
+      parserOptions: {
+        ecmaVersion: 2021,
+        sourceType: "module",
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
     },
-    ecmaVersion: 12,
-    sourceType: "module",
+    rules: {
+      "react/react-in-jsx-scope": "off", // Next.jsでは不要
+    },
   },
-  plugins: ["react", "@typescript-eslint"],
-  rules: {},
-};
+  {
+    plugins: {
+      react: require('eslint-plugin-react'),
+      '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
+      'jsx-a11y': require('eslint-plugin-jsx-a11y'),
+      'import': require('eslint-plugin-import'),
+    },
+    rules: {
+      "react/jsx-uses-react": "off", // ReactのJSX使用のためのルール
+    },
+  },
+];
 
 module.exports = config;
