@@ -1,30 +1,35 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import "chart.js/auto";
 
-export default function Home() {
-  const [prefectures, setPrefectures] = useState([]);
+export async function getServerSideProps() {
+  const response = await fetch(
+    "https://opendata.resas-portal.go.jp/api/v1/prefectures",
+    {
+      headers: {
+        "X-API-KEY": process.env.NEXT_PUBLIC_REPAS_API_KEY,
+      },
+    }
+  );
+  const data = await response.json();
+
+  return {
+    props: {
+      initialPrefectures: data.result || [],
+    },
+  };
+}
+
+export default function Home({ initialPrefectures }) {
+  const [prefectures, setPrefectures] = useState(initialPrefectures);
   const [selectedPrefectures, setSelectedPrefectures] = useState([]);
   const [populationData, setPopulationData] = useState({});
   const [populationType, setPopulationType] = useState("total");
   const [prefectureColors, setPrefectureColors] = useState({});
 
   useEffect(() => {
-    const fetchPrefectures = async () => {
-      const response = await fetch(
-        "https://opendata.resas-portal.go.jp/api/v1/prefectures",
-        {
-          headers: {
-            "X-API-KEY": process.env.NEXT_PUBLIC_REPAS_API_KEY,
-          },
-        },
-      );
-      const data = await response.json();
-      setPrefectures(data.result || []);
-      assignColors(data.result || []); // Call to assign colors
-    };
-    fetchPrefectures();
-  }, []);
+    assignColors(initialPrefectures); // 初期都道府県のカラーを割り当て
+  }, [initialPrefectures]);
 
   const assignColors = (prefectures) => {
     const colors = {};
@@ -32,21 +37,21 @@ export default function Home() {
       colors[pref.prefCode] =
         `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`;
     });
-    setPrefectureColors(colors); // Save colors to state
+    setPrefectureColors(colors); // カラーを state に保存
   };
 
   const handlePrefectureChange = async (prefCode) => {
     if (selectedPrefectures.includes(prefCode)) {
       setSelectedPrefectures(
-        selectedPrefectures.filter((code) => code !== prefCode),
-      ); // チェックを解除
+        selectedPrefectures.filter((code) => code !== prefCode)
+      );
       setPopulationData((prevData) => {
         const newData = { ...prevData };
-        delete newData[prefCode]; // 選択解除した都道府県のデータを削除
+        delete newData[prefCode];
         return newData;
       });
     } else {
-      setSelectedPrefectures([...selectedPrefectures, prefCode]); // 新たにチェックを追加
+      setSelectedPrefectures([...selectedPrefectures, prefCode]);
       await fetchPopulationData(prefCode);
     }
   };
@@ -59,17 +64,17 @@ export default function Home() {
           headers: {
             "X-API-KEY": process.env.NEXT_PUBLIC_REPAS_API_KEY,
           },
-        },
+        }
       );
       const dataTotal = await responseTotal.json();
       const yearDataTotal = dataTotal?.result?.data;
 
       if (Array.isArray(yearDataTotal) && yearDataTotal.length > 0) {
         const yearTotal = yearDataTotal[0].data
-          .filter((item) => item.year >= 1960) // 1960年以降のデータのみを取得
+          .filter((item) => item.year >= 1960)
           .map((item) => ({
             year: item.year,
-            total: item.value, // 総人口のデータ
+            total: item.value,
           }));
 
         const ageGroupData = await fetchAgeGroupData(prefCode);
@@ -87,7 +92,7 @@ export default function Home() {
 
         setPopulationData((prevData) => ({
           ...prevData,
-          [prefCode]: combinedData, // 各都道府県ごとにデータを保存
+          [prefCode]: combinedData,
         }));
       } else {
         setPopulationData((prevData) => ({
@@ -108,7 +113,7 @@ export default function Home() {
   const fetchAgeGroupData = async (prefCode) => {
     const yearRange = Array.from(
       { length: (2045 - 1980) / 5 + 1 },
-      (_, i) => 1980 + i * 5,
+      (_, i) => 1980 + i * 5
     );
     const ageGroupData = await Promise.all(
       yearRange.map(async (year) => {
@@ -118,7 +123,7 @@ export default function Home() {
             headers: {
               "X-API-KEY": process.env.NEXT_PUBLIC_REPAS_API_KEY,
             },
-          },
+          }
         );
         const data = await response.json();
         const yearLeftData = data?.result?.yearLeft;
@@ -130,7 +135,7 @@ export default function Home() {
               elderly: yearLeftData.oldAgeCount || 0,
             }
           : { year, youth: 0, working: 0, elderly: 0 };
-      }),
+      })
     );
 
     return ageGroupData;
@@ -142,7 +147,7 @@ export default function Home() {
 
   const datasets = selectedPrefectures
     .map((prefCode) => {
-      const color = prefectureColors[prefCode]; // Use assigned color
+      const color = prefectureColors[prefCode];
       const data = populationData[prefCode] || [];
 
       return {
@@ -165,15 +170,14 @@ export default function Home() {
         backgroundColor: "rgba(75, 192, 192, 0.2)",
       };
     })
-    .filter((dataset) => dataset.data.length > 0); // データがあるもののみを残す
+    .filter((dataset) => dataset.data.length > 0);
 
   return (
     <div>
       <h1>都道府県別人口構成</h1>
       <h2>都道府県一覧</h2>
       <div className="prefectures-container">
-        <button onClick={() => setSelectedPrefectures([])}>全選択解除</button>{" "}
-        {/* 全選択解除ボタン */}
+        <button onClick={() => setSelectedPrefectures([])}>全選択解除</button>
         <ul>
           {prefectures.map((pref) => (
             <li key={pref.prefCode}>
@@ -241,8 +245,8 @@ export default function Home() {
               labels: (populationData[selectedPrefectures[0]] || [])
                 .filter(
                   (item) =>
-                    (populationType === "total" && item.year >= 1960) || // 総人口の場合は1960年以降
-                    (populationType !== "total" && item.year >= 1980), // 他の人口タイプの場合は1980年以降
+                    (populationType === "total" && item.year >= 1960) ||
+                    (populationType !== "total" && item.year >= 1980)
                 )
                 .map((item) => item.year),
               datasets:
@@ -258,23 +262,17 @@ export default function Home() {
                           (populationType !== "total" &&
                             (populationData[selectedPrefectures[0]] || [])[
                               index
-                            ]?.year >= 1980),
+                            ]?.year >= 1980)
                       ),
                     }))
-                  : [],
-            }}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: "top",
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                },
-              },
+                  : [
+                      {
+                        label: "総人口",
+                        data: [{ year: 1960, value: 0 }],
+                        borderColor: "rgba(75, 192, 192, 1)",
+                        backgroundColor: "rgba(75, 192, 192, 0.2)",
+                      },
+                    ],
             }}
           />
         </div>
