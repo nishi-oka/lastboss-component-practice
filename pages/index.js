@@ -1,9 +1,4 @@
-<<<<<<< HEAD
 import React, { useEffect, useState } from "react";
-=======
-import React from 'react';
-import { useEffect, useState } from "react";
->>>>>>> 107dd421447a9ec6702594dad8b926c3a7bb88cc
 import { Line } from "react-chartjs-2";
 import "chart.js/auto";
 
