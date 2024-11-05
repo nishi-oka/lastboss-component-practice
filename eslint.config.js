@@ -6,7 +6,7 @@ const config = [
         browser: true,
         node: true,
       },
-      parser: require('@typescript-eslint/parser'), // パーサーを直接インポートします
+      parser: require("@typescript-eslint/parser"),
       parserOptions: {
         ecmaVersion: 2021,
         sourceType: "module",
@@ -16,19 +16,23 @@ const config = [
       },
     },
     rules: {
-      "react/react-in-jsx-scope": "off", // Next.jsでは不要
+      "react/react-in-jsx-scope": "off",
+      "react/jsx-uses-react": "off", // ReactのJSX使用のためのルール
     },
   },
   {
     plugins: {
-      react: require('eslint-plugin-react'),
-      '@typescript-eslint': require('@typescript-eslint/eslint-plugin'),
-      'jsx-a11y': require('eslint-plugin-jsx-a11y'),
-      'import': require('eslint-plugin-import'),
+      react: require("eslint-plugin-react"),
+      "@typescript-eslint": require("@typescript-eslint/eslint-plugin"),
+      "jsx-a11y": require("eslint-plugin-jsx-a11y"),
+      import: require("eslint-plugin-import"),
     },
-    rules: {
-      "react/jsx-uses-react": "off", // ReactのJSX使用のためのルール
-    },
+  },
+  {
+    // Next.jsのプラグインを追加
+    extends: [
+      "next/core-web-vitals", // Next.jsのコアルールを追加
+    ],
   },
 ];
 
