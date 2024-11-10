@@ -7,7 +7,7 @@ export async function getServerSideProps() {
     "https://opendata.resas-portal.go.jp/api/v1/prefectures",
     {
       headers: {
-        "X-API-KEY": process.env.NEXT_PUBLIC_REPAS_API_KEY,
+        "X-API-KEY": process.env.REPAS_API_KEY,
       },
     }
   );
@@ -61,7 +61,7 @@ export default function Home({ initialPrefectures }) {
       const responseTotal = await fetch(
         `/api/getPopulationData?prefCode=${prefCode}`
       );
-      console.log("responseTotal",responseTotal);
+      console.log("responseTotal", responseTotal);
       const dataTotal = await responseTotal.json();
       const yearDataTotal = dataTotal?.result?.data;
 
