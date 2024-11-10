@@ -59,13 +59,9 @@ export default function Home({ initialPrefectures }) {
   const fetchPopulationData = async (prefCode) => {
     try {
       const responseTotal = await fetch(
-        `https://opendata.resas-portal.go.jp/api/v1/population/composition/perYear?prefCode=${prefCode}`,
-        {
-          headers: {
-            "X-API-KEY": process.env.NEXT_PUBLIC_REPAS_API_KEY,
-          },
-        }
+        `/api/getPopulationData?prefCode=${prefCode}`
       );
+      console.log("responseTotal",responseTotal);
       const dataTotal = await responseTotal.json();
       const yearDataTotal = dataTotal?.result?.data;
 
@@ -118,15 +114,11 @@ export default function Home({ initialPrefectures }) {
     const ageGroupData = await Promise.all(
       yearRange.map(async (year) => {
         const response = await fetch(
-          `https://opendata.resas-portal.go.jp/api/v1/population/composition/pyramid?prefCode=${prefCode}&cityCode=-&yearLeft=${year}&yearRight=${year}`,
-          {
-            headers: {
-              "X-API-KEY": process.env.NEXT_PUBLIC_REPAS_API_KEY,
-            },
-          }
+          `/api/getAgeGroupData?prefCode=${prefCode}&year=${year}`
         );
         const data = await response.json();
         const yearLeftData = data?.result?.yearLeft;
+
         return yearLeftData
           ? {
               year,
