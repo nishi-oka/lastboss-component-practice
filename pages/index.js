@@ -8,6 +8,7 @@ export async function getServerSideProps() {
     {
       headers: {
         "X-API-KEY": process.env.REPAS_API_KEY,
+        "Cache-Control": "no-cache",
       },
     }
   );
