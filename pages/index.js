@@ -58,6 +58,9 @@ export default function Home({ initialPrefectures }) {
   };
 
   const fetchPopulationData = async (prefCode) => {
+    if (populationData[prefCode]) {
+      return; // Use cached data if available
+    }
     try {
       const responseTotal = await fetch(
         `/api/getPopulationData?prefCode=${prefCode}`

@@ -7,6 +7,7 @@ export default async function handler(req, res) {
   }
 
   try {
+    // RESAS APIから年齢層別人口データを取得
     const response = await fetch(
       `https://opendata.resas-portal.go.jp/api/v1/population/composition/pyramid?prefCode=${prefCode}&cityCode=-&yearLeft=${year}&yearRight=${year}`,
       {
@@ -15,6 +16,11 @@ export default async function handler(req, res) {
         },
       }
     );
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch data: ${response.status}`);
+    }
+
     const data = await response.json();
     res.status(200).json(data);
   } catch (error) {
