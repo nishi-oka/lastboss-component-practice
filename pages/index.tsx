@@ -7,7 +7,7 @@ export async function getServerSideProps() {
     "https://opendata.resas-portal.go.jp/api/v1/prefectures",
     {
       headers: {
-        "X-API-KEY": process.env.REPAS_API_KEY,
+        "X-API-KEY": process.env.REPAS_API_KEY || "",
         "Cache-Control": "no-cache",
       },
     }
@@ -80,7 +80,11 @@ export default function Home({ initialPrefectures }) {
         const ageGroupData = await fetchAgeGroupData(prefCode);
         const combinedData = yearTotal.map((yearItem) => {
           const ageData =
-            ageGroupData.find((age) => age.year === yearItem.year) || {};
+            ageGroupData.find((age) => age.year === yearItem.year) || {
+              youth: 0,
+              working: 0,
+              elderly: 0,
+            };
           return {
             year: yearItem.year,
             total: yearItem.total,

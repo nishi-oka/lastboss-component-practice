@@ -12,7 +12,7 @@ export default async function handler(req, res) {
       `https://opendata.resas-portal.go.jp/api/v1/population/composition/perYear?prefCode=${prefCode}`,
       {
         headers: {
-          "X-API-KEY": process.env.REPAS_API_KEY,
+          "X-API-KEY": process.env.REPAS_API_KEY || "",
         },
       }
     );
