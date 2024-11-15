@@ -2,6 +2,16 @@ import React, { useEffect, useState } from "react";
 import { Line } from "react-chartjs-2";
 import "chart.js/auto";
 
+type Prefecture = {
+  prefCode: number;
+  prefName: string;
+};
+
+type HomeProps = {
+  initialPrefectures: Prefecture[];
+};
+
+
 export async function getServerSideProps() {
   const response = await fetch(
     "https://opendata.resas-portal.go.jp/api/v1/prefectures",
@@ -21,8 +31,8 @@ export async function getServerSideProps() {
   };
 }
 
-export default function Home({ initialPrefectures }) {
-  const [prefectures, setPrefectures] = useState(initialPrefectures);
+export default function Home({ initialPrefectures }: HomeProps) {
+  const [prefectures, setPrefectures] = useState<Prefecture[]>(initialPrefectures);
   const [selectedPrefectures, setSelectedPrefectures] = useState([]);
   const [populationData, setPopulationData] = useState({});
   const [populationType, setPopulationType] = useState("total");
@@ -32,8 +42,8 @@ export default function Home({ initialPrefectures }) {
     assignColors(initialPrefectures); // 初期都道府県のカラーを割り当て
   }, [initialPrefectures]);
 
-  const assignColors = (prefectures) => {
-    const colors = {};
+  const assignColors = (prefectures: Prefecture[]): void => {
+    const colors: Record<number, string> = {};
     prefectures.forEach((pref) => {
       colors[pref.prefCode] =
         `rgba(${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, ${Math.floor(Math.random() * 255)}, 1)`;
@@ -41,7 +51,7 @@ export default function Home({ initialPrefectures }) {
     setPrefectureColors(colors); // カラーを state に保存
   };
 
-  const handlePrefectureChange = async (prefCode) => {
+  const handlePrefectureChange = async (prefCode: number) => {
     if (selectedPrefectures.includes(prefCode)) {
       setSelectedPrefectures(
         selectedPrefectures.filter((code) => code !== prefCode)
@@ -57,7 +67,7 @@ export default function Home({ initialPrefectures }) {
     }
   };
 
-  const fetchPopulationData = async (prefCode) => {
+  const fetchPopulationData = async (prefCode: number) => {
     if (populationData[prefCode]) {
       return; // Use cached data if available
     }
@@ -114,7 +124,9 @@ export default function Home({ initialPrefectures }) {
     }
   };
 
-  const fetchAgeGroupData = async (prefCode) => {
+  const fetchAgeGroupData = async (
+    prefCode: number
+  ): Promise<{ year: number; youth: number; working: number; elderly: number }[]> => {
     const yearRange = Array.from(
       { length: (2045 - 1980) / 5 + 1 },
       (_, i) => 1980 + i * 5
@@ -141,7 +153,9 @@ export default function Home({ initialPrefectures }) {
     return ageGroupData;
   };
 
-  const handlePopulationTypeChange = (event) => {
+  const handlePopulationTypeChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     setPopulationType(event.target.value);
   };
 
