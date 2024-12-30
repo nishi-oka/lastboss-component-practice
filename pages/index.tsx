@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { Line } from "react-chartjs-2";
-import "chart.js/auto";
+import React, { useState, useEffect } from "react";
+import { PrefecturesList } from "./components/PrefecturesList";
+import { PopulationType } from "./components/PopulationType";
+import { Graph } from "./components/Graph";
 
 type Prefecture = {
   prefCode: number;
@@ -11,14 +12,12 @@ type HomeProps = {
   initialPrefectures: Prefecture[];
 };
 
-
 export async function getServerSideProps() {
   const response = await fetch(
     "https://opendata.resas-portal.go.jp/api/v1/prefectures",
     {
       headers: {
         "X-API-KEY": process.env.REPAS_API_KEY || "",
-        "Cache-Control": "no-cache",
       },
     }
   );
@@ -34,8 +33,8 @@ export async function getServerSideProps() {
 export default function Home({ initialPrefectures }: HomeProps) {
   const [prefectures, setPrefectures] = useState<Prefecture[]>(initialPrefectures);
   const [selectedPrefectures, setSelectedPrefectures] = useState([]);
-  const [populationData, setPopulationData] = useState({});
   const [populationType, setPopulationType] = useState("total");
+  const [populationData, setPopulationData] = useState({});
   const [prefectureColors, setPrefectureColors] = useState({});
 
   useEffect(() => {
@@ -87,77 +86,75 @@ export default function Home({ initialPrefectures }: HomeProps) {
             total: item.value,
           }));
 
-        const ageGroupData = await fetchAgeGroupData(prefCode);
-        const combinedData = yearTotal.map((yearItem) => {
-          const ageData =
-            ageGroupData.find((age) => age.year === yearItem.year) || {
-              youth: 0,
-              working: 0,
-              elderly: 0,
+          const ageGroupData = await fetchAgeGroupData(prefCode);
+          const combinedData = yearTotal.map((yearItem) => {
+            const ageData =
+              ageGroupData.find((age) => age.year === yearItem.year) || {
+                youth: 0,
+                working: 0,
+                elderly: 0,
+              };
+            return {
+              year: yearItem.year,
+              total: yearItem.total,
+              youth: ageData.youth || 0,
+              working: ageData.working || 0,
+              elderly: ageData.elderly || 0,
             };
-          return {
-            year: yearItem.year,
-            total: yearItem.total,
-            youth: ageData.youth || 0,
-            working: ageData.working || 0,
-            elderly: ageData.elderly || 0,
-          };
-        });
+          });
 
-        setPopulationData((prevData) => ({
-          ...prevData,
-          [prefCode]: combinedData,
-        }));
-      } else {
+          setPopulationData((prevData) => ({
+            ...prevData,
+            [prefCode]: combinedData,
+          }));
+        } else {
+          setPopulationData((prevData) => ({
+            ...prevData,
+            [prefCode]: [],
+          }));
+        }
+      } catch (error) {
+        console.error("Error fetching population data:", error);
+        alert("人口データの取得に失敗しました。");
         setPopulationData((prevData) => ({
           ...prevData,
           [prefCode]: [],
         }));
       }
-    } catch (error) {
-      console.error("Error fetching population data:", error);
-      alert("人口データの取得に失敗しました。");
-      setPopulationData((prevData) => ({
-        ...prevData,
-        [prefCode]: [],
-      }));
-    }
-  };
+    };
 
-  const fetchAgeGroupData = async (
-    prefCode: number
-  ): Promise<{ year: number; youth: number; working: number; elderly: number }[]> => {
-    const yearRange = Array.from(
-      { length: (2045 - 1980) / 5 + 1 },
-      (_, i) => 1980 + i * 5
-    );
-    const ageGroupData = await Promise.all(
-      yearRange.map(async (year) => {
-        const response = await fetch(
-          `/api/getAgeGroupData?prefCode=${prefCode}&year=${year}`
-        );
-        const data = await response.json();
-        const yearLeftData = data?.result?.yearLeft;
+    const fetchAgeGroupData = async (
+      prefCode: number
+    ): Promise<{ year: number; youth: number; working: number; elderly: number }[]> => {
+      const yearRange = Array.from(
+        { length: (2045 - 1980) / 5 + 1 },
+        (_, i) => 1980 + i * 5
+      );
+      const ageGroupData = await Promise.all(
+        yearRange.map(async (year) => {
+          const response = await fetch(
+            `/api/getAgeGroupData?prefCode=${prefCode}&year=${year}`
+          );
+          const data = await response.json();
+          const yearLeftData = data?.result?.yearLeft;
 
-        return yearLeftData
-          ? {
-              year,
-              youth: yearLeftData.newAgeCount || 0,
-              working: yearLeftData.middleAgeCount || 0,
-              elderly: yearLeftData.oldAgeCount || 0,
-            }
-          : { year, youth: 0, working: 0, elderly: 0 };
-      })
-    );
+          return yearLeftData
+            ? {
+                year,
+                youth: yearLeftData.newAgeCount || 0,
+                working: yearLeftData.middleAgeCount || 0,
+                elderly: yearLeftData.oldAgeCount || 0,
+              }
+            : { year, youth: 0, working: 0, elderly: 0 };
+        })
+      );
 
-    return ageGroupData;
-  };
+      return ageGroupData;
+    };
 
-  const handlePopulationTypeChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setPopulationType(event.target.value);
-  };
+    const handlePopulationTypeChange = (type: string) => {
+      setPopulationType(type);
+    };
 
   const datasets = selectedPrefectures
     .map((prefCode) => {
@@ -190,107 +187,26 @@ export default function Home({ initialPrefectures }: HomeProps) {
     <div>
       <h1>都道府県別人口構成</h1>
       <h2>都道府県一覧</h2>
-      <div className="prefectures-container">
-        <button onClick={() => setSelectedPrefectures([])}>全選択解除</button>
-        <ul>
-          {prefectures.map((pref) => (
-            <li key={pref.prefCode}>
-              <label>
-                <input
-                  type="checkbox"
-                  value={pref.prefCode}
-                  checked={selectedPrefectures.includes(pref.prefCode)}
-                  onChange={() => handlePrefectureChange(pref.prefCode)}
-                />
-                {pref.prefName}
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <PrefecturesList
+        prefectures={prefectures}
+        selectedPrefectures={selectedPrefectures}
+        onChange={handlePrefectureChange}
+        onReset={() => setSelectedPrefectures([])}
+      />
 
       <h2>人口タイプを選択</h2>
-      <div className="population-type-container">
-        <div>
-          <label className="total">
-            <input
-              type="radio"
-              value="total"
-              checked={populationType === "total"}
-              onChange={handlePopulationTypeChange}
-            />
-            総人口
-          </label>
-          <label className="youth">
-            <input
-              type="radio"
-              value="youth"
-              checked={populationType === "youth"}
-              onChange={handlePopulationTypeChange}
-            />
-            年少人口(0歳～14歳)
-          </label>
-          <label className="working">
-            <input
-              type="radio"
-              value="working"
-              checked={populationType === "working"}
-              onChange={handlePopulationTypeChange}
-            />
-            生産年齢人口(15歳～64歳)
-          </label>
-          <label className="elderly">
-            <input
-              type="radio"
-              value="elderly"
-              checked={populationType === "elderly"}
-              onChange={handlePopulationTypeChange}
-            />
-            老年人口(65歳以上)
-          </label>
-        </div>
-      </div>
+      <PopulationType
+        populationType={populationType}
+        handlePopulationTypeChange={handlePopulationTypeChange}
+      />
 
       <h2>人口構成グラフ</h2>
-      <div>
-        <div className="graph-container">
-          <Line
-            data={{
-              labels: (populationData[selectedPrefectures[0]] || [])
-                .filter(
-                  (item) =>
-                    (populationType === "total" && item.year >= 1960) ||
-                    (populationType !== "total" && item.year >= 1980)
-                )
-                .map((item) => item.year),
-              datasets:
-                datasets.length > 0
-                  ? datasets.map((dataset) => ({
-                      ...dataset,
-                      data: dataset.data.filter(
-                        (_, index) =>
-                          (populationType === "total" &&
-                            (populationData[selectedPrefectures[0]] || [])[
-                              index
-                            ]?.year >= 1960) ||
-                          (populationType !== "total" &&
-                            (populationData[selectedPrefectures[0]] || [])[
-                              index
-                            ]?.year >= 1980)
-                      ),
-                    }))
-                  : [
-                      {
-                        label: "総人口",
-                        data: [{ year: 1960, value: 0 }],
-                        borderColor: "rgba(75, 192, 192, 1)",
-                        backgroundColor: "rgba(75, 192, 192, 0.2)",
-                      },
-                    ],
-            }}
-          />
-        </div>
-      </div>
+      <Graph
+        selectedPrefectures={selectedPrefectures}
+        populationType={populationType}
+        populationData={populationData}
+        datasets={datasets}
+      />
     </div>
   );
 }
